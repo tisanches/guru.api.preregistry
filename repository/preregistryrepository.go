@@ -6,10 +6,10 @@ import (
 	"log"
 )
 
-func GetPosition(document_number string)map[string][]map[string]interface{}{
+func GetPosition(customer_code string)map[string][]map[string]interface{}{
 	connect()
 	defer database.Close()
-	rows, err := database.Query(SELECTCUSTOMERQUEUE, document_number)
+	rows, err := database.Query(SELECTCUSTOMERQUEUE, customer_code)
 	if err != nil {
 		log.Println("Error on getting customer: %v", err)
 	}

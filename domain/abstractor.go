@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-func mapPosition(document_number string) Position {
+func mapPosition(customer_code string) Position {
 	customer := Position{}
-	rawData := repository.GetPosition(document_number)
+	rawData := repository.GetPosition(customer_code)
 	for _,mp  := range rawData["customer"]{
 		customer = Position{
 			Customer_Code: mp["customer_code"].(string),

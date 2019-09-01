@@ -7,16 +7,17 @@ import (
 	"github.com/guru-invest/guru.api.preregistry/domain"
 	"github.com/guru-invest/guru.framework/api"
 	"io/ioutil"
+	"strings"
 )
 
 func InitializeApi(){
 	createRoutes()
-	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", false)
+	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", true)
 }
 
 func createRoutes(){
 	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route + "/new", createCustomer)
-	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:document_number", getPosition)
+	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:customer_code", getPosition)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/referrals/:referral_code", getReferrals)
 }
 
@@ -48,12 +49,12 @@ func  createCustomer(c *gin.Context){
 }
 
 func getPosition(c *gin.Context){
-	document_number := c.Param("document_number")
-	if document_number == ""{
-		c.AbortWithStatusJSON(400, "Missing key: document_number")
+	customer_code := c.Param("customer_code")
+	if customer_code == ""{
+		c.AbortWithStatusJSON(400, "Missing key: customer_code")
 	}else{
 		position := domain.Position{}
-		position.Get(document_number)
+		position.Get(customer_code)
 		c.AbortWithStatusJSON(200, position)
 	}
 }
@@ -63,6 +64,9 @@ func getReferrals(c *gin.Context){
 	if referral_code == ""{
 		c.AbortWithStatusJSON(400, "Missing key: referral_code")
 	}else{
+		if strings.Contains("https://seja.guru/", referral_code){
+			referral_code = strings.Replace(referral_code, "https://seja.guru/", "",1 )
+		}
 		referrals := domain.Referrals{}
 		referrals.Get(referral_code)
 		c.AbortWithStatusJSON(200, referrals)

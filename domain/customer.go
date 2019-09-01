@@ -19,13 +19,8 @@ func (c *Customer)Insert(){
 		c.generateCustomerCode()
 	}
 	insert(c)
-	c.createLogin()
 }
 
 func (c *Customer)generateCustomerCode(){
 	c.Customer_Code = dynamic.GenerateCustomerCode()
-}
-
-func (c *Customer) createLogin(){
-	//TODO: Criar chamada para o serviço de autenticação
 }

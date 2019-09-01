@@ -11,6 +11,6 @@ type Position struct{
 	Behind 			int64 `json:"behind,omitempty"`
 }
 
-func (p *Position)Get(document_number string){
-	*p = mapPosition(document_number)
+func (p *Position)Get(customer_code string){
+	*p = mapPosition(customer_code)
 }
