@@ -44,7 +44,7 @@ func  createCustomer(c *gin.Context){
 	validate(c, customer.Password)
 	customer.Insert()
 	position := domain.Position{}
-	position.Get(customer.DocumentNumber)
+	position.Get(customer.Customer_Code)
 	c.AbortWithStatusJSON(200, position)
 }
 

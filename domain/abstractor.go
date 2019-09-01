@@ -26,16 +26,22 @@ func mapPosition(customer_code string) Position {
 
 func mapReferrals(referral_code string) Referrals {
 	customer := Referrals{}
+	accepted := Referrals_Accepted{}
 	rawData := repository.GetReferrals(referral_code)
 	for _,mp  := range rawData["referrals"]{
-		customer = Referrals{
-			Referral_Code: mp["referral"].(string),
-			Origin_Name: mp["origin_name"].(string),
-			Origin_Code: mp["origin_code"].(string),
+		if customer.Origin_Code == "" {
+			customer = Referrals{
+				Referral_Code: mp["referral"].(string),
+				Origin_Name:   mp["origin_name"].(string),
+				Origin_Code:   mp["origin_code"].(string),
+			}
+		}
+		accepted = Referrals_Accepted{
 			Customer_Name: mp["customer_name"].(string),
 			Customer_Code: mp["customer_code"].(string),
 			Creation_Date: mp["creation_date"].(time.Time),
 		}
+		customer.Accepted = append(customer.Accepted, accepted)
 	}
 	return customer
 }
