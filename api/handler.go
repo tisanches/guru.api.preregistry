@@ -113,7 +113,7 @@ func getPositionWithToken(c *gin.Context) {
 		}
 	} else {
 		msg := make(map[string]interface{})
-		msg["error"] = "Invalid Format"
+		msg["error"] = "Invalid Token"
 		c.AbortWithStatusJSON(400, msg)
 	}
 }
