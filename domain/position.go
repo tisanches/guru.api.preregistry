@@ -15,6 +15,6 @@ func (p *Position)Get(customer_code string){
 	*p = mapPosition(customer_code)
 }
 
-func (p *Position)GetByDocumentNumber(document_number string){
-	*p = mapPositionByDocumentNumber(document_number)
+func (p *Position)GetByEmail(email string){
+	*p = mapPositionByEmail(email)
 }

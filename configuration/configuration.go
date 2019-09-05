@@ -23,6 +23,9 @@ type Database struct{
 
 type Other struct{
 	DeepLinkPrefix string `json:"deeplink-prefix,omitempty"`
+	Authorization string `json:"authorization,omitempty"`
+	Authentication string `json:"authentication,omitempty"`
+	PositionPrefix string `json:"position-prefix,omitempty"`
 }
 
 type Configuration struct{

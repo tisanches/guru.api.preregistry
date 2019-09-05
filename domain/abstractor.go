@@ -24,9 +24,9 @@ func mapPosition(customer_code string) Position {
 	return customer
 }
 
-func mapPositionByDocumentNumber(document_number string) Position {
+func mapPositionByEmail(email string) Position {
 	customer := Position{}
-	rawData := repository.GetPositionByDocumentNumber(document_number)
+	rawData := repository.GetPositionByEmail(email)
 	for _,mp  := range rawData["customer"]{
 		customer = Position{
 			Customer_Code: mp["customer_code"].(string),

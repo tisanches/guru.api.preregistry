@@ -21,10 +21,10 @@ func GetPosition(customer_code string)map[string][]map[string]interface{}{
 	}
 }
 
-func GetPositionByDocumentNumber(document_number string)map[string][]map[string]interface{}{
+func GetPositionByEmail(email string)map[string][]map[string]interface{}{
 	connect()
 	defer database.Close()
-	rows, err := database.Query(SELECTCUSTOMERQUEUEBYDOCUMENTNUMBER, document_number)
+	rows, err := database.Query(SELECTCUSTOMERQUEUEBYEMAIL, email)
 	if err != nil {
 		log.Println("Error on getting customer: %v", err)
 	}
