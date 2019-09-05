@@ -17,13 +17,16 @@ func InitializeApi(){
 
 func createRoutes(){
 	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route + "/new", createCustomer)
+	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/customer/:email", getPreRegistryStep)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:customer_code", getPosition)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/referrals/:referral_code", getReferrals)
 }
 
 func validate(c *gin.Context, field string){
 	if field == ""{
-		c.AbortWithStatusJSON(400, "Missing key: " + field)
+		msg := make(map[string]interface{})
+		msg["error"] = "Missing key: " + field
+		c.AbortWithStatusJSON(400, msg)
 	}
 }
 
@@ -31,27 +34,34 @@ func  createCustomer(c *gin.Context){
 	customer := domain.Customer{}
 	reqBody, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil{
-		c.AbortWithStatusJSON(400, "Invalid format")
+		msg := make(map[string]interface{})
+		msg["error"] = "Invalid format"
+		c.AbortWithStatusJSON(400, msg)
 	}
 	err = json.Unmarshal(reqBody, &customer)
 	if err != nil{
-		c.AbortWithStatusJSON(400, "Invalid format")
+		msg := make(map[string]interface{})
+		msg["error"] = "Invalid format"
+		c.AbortWithStatusJSON(400, msg)
 	}
-	validate(c, customer.Name)
-	validate(c, customer.Contact)
-	validate(c, customer.Email)
-	validate(c, customer.DocumentNumber)
-	validate(c, customer.Password)
 	customer.Insert()
 	position := domain.Position{}
 	position.Get(customer.Customer_Code)
-	c.AbortWithStatusJSON(200, position)
+	if position.Customer_Code == ""{
+		msg := make(map[string]interface{})
+		msg["msg"] = "Step saved."
+		c.AbortWithStatusJSON(200, msg)
+	}else {
+		c.AbortWithStatusJSON(200, position)
+	}
 }
 
 func getPosition(c *gin.Context){
 	customer_code := c.Param("customer_code")
 	if customer_code == ""{
-		c.AbortWithStatusJSON(400, "Missing key: customer_code")
+		msg := make(map[string]interface{})
+		msg["error"] = "Missing Key: customer_code"
+		c.AbortWithStatusJSON(400, msg)
 	}else{
 		position := domain.Position{}
 		position.Get(customer_code)
@@ -59,13 +69,40 @@ func getPosition(c *gin.Context){
 	}
 }
 
+func getPreRegistryStep(c *gin.Context){
+	email := c.Param("email")
+	if email == ""{
+		msg := make(map[string]interface{})
+		msg["error"] = "Missing Key: email"
+		c.AbortWithStatusJSON(400, msg)
+	}else{
+		customer := domain.Customer{}
+		position := domain.Position{}
+		customer.GetByEmail(email)
+		position.GetByDocumentNumber(customer.DocumentNumber)
+		if position.Customer_Code != ""{
+			msg := make(map[string]interface{})
+			msg["customer_code"] = position.Customer_Code
+			c.AbortWithStatusJSON(200, msg)
+		}else if customer.Email != ""{
+			c.AbortWithStatusJSON(200, customer)
+		}else{
+			msg := make(map[string]interface{})
+			msg["error"] = "User not foud"
+			c.AbortWithStatusJSON(404, msg)
+		}
+	}
+}
+
 func getReferrals(c *gin.Context){
 	referral_code := c.Param("referral_code")
 	if referral_code == ""{
-		c.AbortWithStatusJSON(400, "Missing key: referral_code")
+		msg := make(map[string]interface{})
+		msg["error"] = "Missing Key: referral_code"
+		c.AbortWithStatusJSON(400, msg)
 	}else{
-		if strings.Contains("https://seja.guru/", referral_code){
-			referral_code = strings.Replace(referral_code, "https://seja.guru/", "",1 )
+		if strings.Contains(configuration.CONFIGURATION.OTHER.DeepLinkPrefix, referral_code){
+			referral_code = strings.Replace(referral_code, configuration.CONFIGURATION.OTHER.DeepLinkPrefix, "",1 )
 		}
 		referrals := domain.Referrals{}
 		referrals.Get(referral_code)

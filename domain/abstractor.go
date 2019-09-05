@@ -24,6 +24,38 @@ func mapPosition(customer_code string) Position {
 	return customer
 }
 
+func mapPositionByDocumentNumber(document_number string) Position {
+	customer := Position{}
+	rawData := repository.GetPositionByDocumentNumber(document_number)
+	for _,mp  := range rawData["customer"]{
+		customer = Position{
+			Customer_Code: mp["customer_code"].(string),
+			DocumentNumber: mp["document_number"].(string),
+			Name: mp["name"].(string),
+			Email: mp["email"].(string),
+			Referral_Code:  configuration.CONFIGURATION.OTHER.DeepLinkPrefix + mp["referral_code"].(string),
+			Referral_Count: mp["referral_count"].(int64),
+			Position: mp["position"].(int64),
+			Behind: mp["behind"].(int64),
+		}
+	}
+	return customer
+}
+
+func mapPreRegistryStep(email string) Customer {
+	customer := Customer{}
+	rawData := repository.GetPreRegistryStep(email)
+	for _,mp  := range rawData["registrystep"]{
+		customer = Customer{
+			DocumentNumber: mp["document_number"].(string),
+			Name: mp["name"].(string),
+			Email: mp["email"].(string),
+			Referral_Code:  mp["referral"].(string),
+		}
+	}
+	return customer
+}
+
 func mapReferrals(referral_code string) Referrals {
 	customer := Referrals{}
 	accepted := Referrals_Accepted{}
@@ -47,9 +79,16 @@ func mapReferrals(referral_code string) Referrals {
 }
 
 func insert(c *Customer) error{
-	err := repository.InsertCustomer(c.DocumentNumber, c.Name, c.Email, c.Contact, c.Customer_Code, c.Referral_Code, c.Password)
-	if err != nil{
-		return err
+	if c.Email != "" && c.Name != "" && c.DocumentNumber != "" && c.Contact != ""{
+		err := repository.InsertCustomer(c.DocumentNumber, c.Name, c.Email, c.Contact, c.Customer_Code, c.Referral_Code, c.Password)
+		if err != nil{
+			return err
+		}
+	}else{
+		err := repository.InsertOnPreRegistryStep(c.Email, c.Name, c.DocumentNumber, c.Contact, c.Referral_Code)
+		if err != nil{
+			return err
+		}
 	}
 	return nil
 }

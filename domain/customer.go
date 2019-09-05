@@ -24,3 +24,7 @@ func (c *Customer)Insert(){
 func (c *Customer)generateCustomerCode(){
 	c.Customer_Code = dynamic.GenerateCustomerCode()
 }
+
+func (c *Customer) GetByEmail(email string){
+	*c = mapPreRegistryStep(email)
+}
