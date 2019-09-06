@@ -14,14 +14,14 @@ import (
 
 func InitializeApi(){
 	createRoutes()
-	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", false)
+	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", true)
 }
 
 func createRoutes(){
 	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route + "/new", createCustomer)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/customer/:email", getPreRegistryStep)
-	//api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:customer_code", getPosition)
-	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:token/:customer_code", getPositionWithToken)
+	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:customer_code", getPosition)
+	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/authorize/:token/:customer_code", getPositionWithToken)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/referrals/:referral_code", getReferrals)
 }
 
