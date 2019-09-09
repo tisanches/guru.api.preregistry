@@ -7,30 +7,22 @@ import (
 	"github.com/guru-invest/guru.api.preregistry/domain"
 	"github.com/guru-invest/guru.framework/api"
 	"io/ioutil"
-	"log"
-	"net/http"
 	"strings"
 )
 
 func InitializeApi(){
 	createRoutes()
-	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", true)
+	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", false)
 }
 
 func createRoutes(){
 	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route + "/new", createCustomer)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/customer/:email", getPreRegistryStep)
+	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route + "/authorize/device", setDeviceAuthorization)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:customer_code", getPosition)
+	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/authentication/:customer_code", getAuthenticationHandler)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/authorize/:token/:customer_code", getPositionWithToken)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/referrals/:referral_code", getReferrals)
-}
-
-func validate(c *gin.Context, field string){
-	if field == ""{
-		msg := make(map[string]interface{})
-		msg["error"] = "Missing key: " + field
-		c.AbortWithStatusJSON(400, msg)
-	}
 }
 
 func  createCustomer(c *gin.Context){
@@ -55,20 +47,33 @@ func  createCustomer(c *gin.Context){
 		msg["msg"] = "Step saved."
 		c.AbortWithStatusJSON(200, msg)
 	}else {
-		c.AbortWithStatusJSON(200, position)
+		sendEmail(position.Email, position.Name, "", welcome)
+		msg := make(map[string]interface{})
+		msg["msg"] = "User notified"
+		msg["customer_code"] = position.Customer_Code
+		c.AbortWithStatusJSON(200, msg)
 	}
 }
 
 func getPosition(c *gin.Context){
-	customer_code := c.Param("customer_code")
-	if customer_code == ""{
-		msg := make(map[string]interface{})
-		msg["error"] = "Missing Key: customer_code"
-		c.AbortWithStatusJSON(400, msg)
+	token := c.GetHeader("Authorization")
+	token = strings.Replace(token, "Bearer ", "", 1)
+	token = strings.Replace(token, "bearer ", "", 1)
+	if token != "" && getAuthorization(token) {
+		customer_code := c.Param("customer_code")
+		if customer_code == "" {
+			msg := make(map[string]interface{})
+			msg["error"] = "Missing Key: customer_code"
+			c.AbortWithStatusJSON(400, msg)
+		} else {
+			position := domain.Position{}
+			position.Get(customer_code)
+			c.AbortWithStatusJSON(200, position)
+		}
 	}else{
-		position := domain.Position{}
-		position.Get(customer_code)
-		c.AbortWithStatusJSON(200, position)
+		msg := make(map[string]interface{})
+		msg["error"] = "Invalid Token"
+		c.AbortWithStatusJSON(400, msg)
 	}
 }
 
@@ -86,7 +91,6 @@ func getPreRegistryStep(c *gin.Context){
 		if position.Customer_Code != ""{
 			msg := make(map[string]interface{})
 			msg["customer_code"] = position.Customer_Code
-			msg["position_at"] = configuration.CONFIGURATION.OTHER.PositionPrefix + getAuthentication(email)
 			c.AbortWithStatusJSON(200, msg)
 		}else if customer.Email != ""{
 			c.AbortWithStatusJSON(200, customer)
@@ -98,22 +102,56 @@ func getPreRegistryStep(c *gin.Context){
 	}
 }
 
+func setDeviceAuthorization(c *gin.Context){
+	customer := domain.Customer{}
+	reqBody, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil{
+		msg := make(map[string]interface{})
+		msg["error"] = "Invalid format"
+		c.AbortWithStatusJSON(400, msg)
+	}
+	err = json.Unmarshal(reqBody, &customer)
+	if err != nil{
+		msg := make(map[string]interface{})
+		msg["error"] = "Invalid format"
+		c.AbortWithStatusJSON(400, msg)
+	}
+	if customer.Customer_Code == ""{
+		msg := make(map[string]interface{})
+		msg["error"] = "Missing Key: customer_code"
+		c.AbortWithStatusJSON(400, msg)
+	}else {
+		position := domain.Position{}
+		position.Get(customer.Customer_Code)
+		if position.Customer_Code != "" {
+			m := getAuthentication(position.Email)
+			link := configuration.CONFIGURATION.OTHER.PositionPrefix + m["token"].(string) + "/" + m["customer_code"].(string)
+			sendEmail(position.Email, position.Name, link, authorization)
+			msg := make(map[string]interface{})
+			msg["msg"] = "Email sent to the user."
+			c.AbortWithStatusJSON(200, msg)
+		}else{
+			msg := make(map[string]interface{})
+			msg["error"] = "Customer not foud"
+			c.AbortWithStatusJSON(404, msg)
+		}
+	}
+}
+
 func getPositionWithToken(c *gin.Context) {
 	customer_code := c.Param("customer_code")
 	token := c.Param("token")
 	if token != "" && getAuthorization(token) {
 		if customer_code != "" {
-			position := domain.Position{}
-			position.Get(customer_code)
-			c.AbortWithStatusJSON(200, position)
+			sendCredentials(customer_code, c)
 		} else {
 			msg := make(map[string]interface{})
-			msg["error"] = "Missing Key: customer_code"
+			msg["error"] = "Invalid token"
 			c.AbortWithStatusJSON(400, msg)
 		}
 	} else {
 		msg := make(map[string]interface{})
-		msg["error"] = "Invalid Token"
+		msg["error"] = "Invalid token"
 		c.AbortWithStatusJSON(400, msg)
 	}
 }
@@ -130,44 +168,24 @@ func getReferrals(c *gin.Context){
 		}
 		referrals := domain.Referrals{}
 		referrals.Get(referral_code)
+		if referrals.Referral_Code == ""{
+			msg := make(map[string]interface{})
+			msg["error"] = "Referral code not found"
+			c.AbortWithStatusJSON(404, msg)
+		}
 		c.AbortWithStatusJSON(200, referrals)
 	}
 }
 
-func getAuthentication(email string) string{
-	client := &http.Client{}
-	req, _ := http.NewRequest("GET", configuration.CONFIGURATION.OTHER.Authentication + email, nil)
-	res, err := client.Do(req)
-	if err != nil {
-		log.Println(err)
+func getAuthenticationHandler(c *gin.Context) {
+	customer_code := c.Param("customer_code")
+	if customer_code == ""{
+		msg := make(map[string]interface{})
+		msg["error"] = "Missing Key: customer_code"
+		c.AbortWithStatusJSON(400, msg)
 	}else{
-		if res.Status == "200 OK"{
-			reqBody, err := ioutil.ReadAll(res.Body)
-			if err != nil{
-				return ""
-			}
-			resp := make(map[string]interface{})
-			err = json.Unmarshal(reqBody, &resp)
-			if err != nil{
-				return ""
-			}
-			return resp["token"].(string) + "/" + resp["customer_code"].(string)
-		}
+		sendCredentials(customer_code, c)
 	}
-	return ""
 }
 
-func getAuthorization(token string) bool{
-	client := &http.Client{}
-	req, _ := http.NewRequest("GET", configuration.CONFIGURATION.OTHER.Authorization, nil)
-	req.Header.Set("Authorization", "bearer " + token)
-	res, err := client.Do(req)
-	if err != nil {
-		log.Println(err)
-	}else{
-		if res.Status == "200 OK"{
-			return true
-		}
-	}
-	return false
-}
+

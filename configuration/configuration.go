@@ -21,6 +21,13 @@ type Database struct{
 	Database string `json:"database,omitempty"`
 }
 
+type Mail struct{
+	SMTPUser string `json:"smtpuser,omitempty"`
+	SMTPPassword string `json:"smtppassword,omitempty"`
+	SMTPServer string `json:"smtpserver,omitempty"`
+	SMTPPort string `json:"smtpport,omitempty"`
+}
+
 type Other struct{
 	DeepLinkPrefix string `json:"deeplink-prefix,omitempty"`
 	Authorization string `json:"authorization,omitempty"`
@@ -32,6 +39,7 @@ type Configuration struct{
 	API Api `json:"api,omitempty"`
 	DATABASE Database `json:"database,omitempty"`
 	OTHER Other `json:"other,omitempty"`
+	MAIL Mail `json:"mail,omitempty"`
 }
 
 const CONFIGURATION_SERVER_KEY  = "aHR0cHM6Ly9jb25maWd1cmF0aW9uLmd1cnUuY29tLnZjL2FwaS92MS9wcm9kL3ByZXJlZ2lzdHJ5"
