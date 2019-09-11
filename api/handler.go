@@ -12,12 +12,12 @@ import (
 
 func InitializeApi(){
 	createRoutes()
-	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", false)
+	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", true)
 }
 
 func createRoutes(){
 	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route + "/new", createCustomer)
-	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/customer/:email", getPreRegistryStep)
+	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/customer/:param", getCustomer)
 	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route + "/authorize/device", setDeviceAuthorization)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/position/:customer_code", getPosition)
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route + "/authentication/:customer_code", getAuthenticationHandler)
@@ -77,17 +77,17 @@ func getPosition(c *gin.Context){
 	}
 }
 
-func getPreRegistryStep(c *gin.Context){
-	email := c.Param("email")
-	if email == ""{
+func getCustomer(c *gin.Context){
+	param := c.Param("param")
+	if param == ""{
 		msg := make(map[string]interface{})
 		msg["error"] = "Missing Key: email"
 		c.AbortWithStatusJSON(400, msg)
 	}else{
 		customer := domain.Customer{}
 		position := domain.Position{}
-		customer.GetByEmail(email)
-		position.GetByEmail(email)
+		customer.GetByEmail(param)
+		position.GetByEmail(param)
 		if position.Customer_Code != ""{
 			msg := make(map[string]interface{})
 			msg["customer_code"] = position.Customer_Code

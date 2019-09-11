@@ -79,7 +79,7 @@ func mapReferrals(referral_code string) Referrals {
 }
 
 func insert(c *Customer) error{
-	if c.Email != "" && c.Name != "" && c.DocumentNumber != "" && c.Contact != ""{
+	if c.Email != "" && c.Name != "" && c.DocumentNumber != ""{
 		err := repository.InsertCustomer(c.DocumentNumber, c.Name, c.Email, c.Contact, c.Customer_Code, c.Referral_Code, c.Password)
 		if err != nil{
 			return err
