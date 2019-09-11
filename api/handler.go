@@ -48,10 +48,7 @@ func  createCustomer(c *gin.Context){
 		c.AbortWithStatusJSON(200, msg)
 	}else {
 		sendEmail(position.Email, position.Name, "", welcome)
-		msg := make(map[string]interface{})
-		msg["msg"] = "User notified"
-		msg["customer_code"] = position.Customer_Code
-		c.AbortWithStatusJSON(200, msg)
+		sendCredentials(customer.Customer_Code, c)
 	}
 }
 
