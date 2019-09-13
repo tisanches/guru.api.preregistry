@@ -92,3 +92,13 @@ func insert(c *Customer) error{
 	}
 	return nil
 }
+
+func update(c *Customer) error{
+	if c.Customer_Code != "" && c.Contact != ""{
+		err := repository.UpdateCustomer(c.Customer_Code, c.Contact)
+		if err != nil{
+			return err
+		}
+	}
+	return nil
+}

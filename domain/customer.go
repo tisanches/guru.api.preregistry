@@ -28,3 +28,9 @@ func (c *Customer)generateCustomerCode(){
 func (c *Customer) GetByEmail(email string){
 	*c = mapPreRegistryStep(email)
 }
+
+func (c *Customer) Update(){
+	if c.Customer_Code != "" {
+		update(c)
+	}
+}

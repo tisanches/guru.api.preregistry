@@ -90,6 +90,21 @@ func InsertCustomer(documentNumber string, name string, email string, contact st
 	return nil
 }
 
+func UpdateCustomer(customer_code string, contact string) error{
+	connect()
+	defer database.Close()
+	result, err := database.Exec(UPDATEPREREGISTGRY, contact, customer_code )
+	if err != nil {
+		log.Println("Error on update customer pre-registry: %v", err)
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0{
+		log.Println("0 rows are affected")
+	}
+	return nil
+}
+
 func insertReferrals(customer_code string, referral_code string) error{
 	connect()
 	defer database.Close()

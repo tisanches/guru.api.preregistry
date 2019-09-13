@@ -39,16 +39,24 @@ func  createCustomer(c *gin.Context){
 		msg["error"] = "Invalid format"
 		c.AbortWithStatusJSON(400, msg)
 	}
-	customer.Insert()
-	position := domain.Position{}
-	position.Get(customer.Customer_Code)
-	if position.Customer_Code == ""{
-		msg := make(map[string]interface{})
-		msg["msg"] = "Step saved."
-		c.AbortWithStatusJSON(200, msg)
-	}else {
-		sendEmail(position.Email, position.Name, "", welcome)
+	ePosition := domain.Position{}
+	ePosition.GetByEmail(customer.Email)
+	if ePosition.Customer_Code != ""{
+		customer.Customer_Code = ePosition.Customer_Code
+		customer.Update()
 		sendCredentials(customer.Customer_Code, c)
+	}else {
+		customer.Insert()
+		position := domain.Position{}
+		position.Get(customer.Customer_Code)
+		if position.Customer_Code == "" {
+			msg := make(map[string]interface{})
+			msg["msg"] = "Step saved."
+			c.AbortWithStatusJSON(200, msg)
+		} else {
+			sendEmail(position.Email, position.Name, "", welcome)
+			sendCredentials(customer.Customer_Code, c)
+		}
 	}
 }
 
