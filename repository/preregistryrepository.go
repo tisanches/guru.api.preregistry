@@ -3,11 +3,12 @@ package repository
 import (
 	"fmt"
 	"github.com/guru-invest/guru.framework/dynamic"
+	"github.com/pkg/errors"
 	"log"
 	"strings"
 )
 
-func GetPosition(customer_code string)map[string][]map[string]interface{}{
+func GetPosition(customer_code string)(map[string][]map[string]interface{}, error){
 	connect()
 	defer database.Close()
 	rows, err := database.Query(SELECTCUSTOMERQUEUE, customer_code)
@@ -15,13 +16,13 @@ func GetPosition(customer_code string)map[string][]map[string]interface{}{
 		log.Println("Error on getting customer: %v", err)
 	}
 	if rows == nil{
-		return make(map[string][]map[string]interface{})
+		return make(map[string][]map[string]interface{}), errors.Wrap(err, "error on getting position.")
 	}else {
-		return mapResult(rows, "customer")
+		return mapResult(rows, "customer"), nil
 	}
 }
 
-func GetPositionByEmail(email string)map[string][]map[string]interface{}{
+func GetPositionByEmail(email string)(map[string][]map[string]interface{}, error){
 	connect()
 	defer database.Close()
 	rows, err := database.Query(SELECTCUSTOMERQUEUEBYEMAIL, email)
@@ -29,13 +30,13 @@ func GetPositionByEmail(email string)map[string][]map[string]interface{}{
 		log.Println("Error on getting customer: %v", err)
 	}
 	if rows == nil{
-		return make(map[string][]map[string]interface{})
+		return make(map[string][]map[string]interface{}), errors.Wrap(err, "error on getting position by email.")
 	}else {
-		return mapResult(rows, "customer")
+		return mapResult(rows, "customer"), nil
 	}
 }
 
-func GetReferrals(referral_code string)map[string][]map[string]interface{}{
+func GetReferrals(referral_code string)(map[string][]map[string]interface{}, error){
 	connect()
 	defer database.Close()
 	rows, err := database.Query(SELECTREFERRALS, referral_code)
@@ -43,13 +44,13 @@ func GetReferrals(referral_code string)map[string][]map[string]interface{}{
 		log.Println("Error on getting referrals: %v", err)
 	}
 	if rows == nil{
-		return make(map[string][]map[string]interface{})
+		return make(map[string][]map[string]interface{}),errors.Wrap(err, "error on getting referrals.")
 	}else {
-		return mapResult(rows, "referrals")
+		return mapResult(rows, "referrals"), nil
 	}
 }
 
-func GetPreRegistryStep(email string)map[string][]map[string]interface{}{
+func GetPreRegistryStep(email string)(map[string][]map[string]interface{}, error){
 	connect()
 	defer database.Close()
 	rows, err := database.Query(SELECTPREREGISTRYSTEP, email)
@@ -57,9 +58,9 @@ func GetPreRegistryStep(email string)map[string][]map[string]interface{}{
 		log.Println("Error on getting referrals: %v", err)
 	}
 	if rows == nil{
-		return make(map[string][]map[string]interface{})
+		return make(map[string][]map[string]interface{}), errors.Wrap(err, "error on getting preregistrystep")
 	}else {
-		return mapResult(rows, "registrystep")
+		return mapResult(rows, "registrystep"), nil
 	}
 }
 
@@ -70,21 +71,21 @@ func InsertCustomer(documentNumber string, name string, email string, contact st
 	_, err := database.Exec(sttmt)
 	if err != nil {
 		log.Println("Error on insert new customer pre-registry: %v", err)
-		return err
+		return errors.Wrap(err, "error on insert customer.")
 	}
 	referral_code = dynamic.GenerateShortId()
 	err = insertReferrals(customer_code, referral_code)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error on insert customer referrals.")
 	}
 	err = insertOnQueue(customer_code)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error on insert customer queue.")
 	}
 
 	err = insertAuthentication(customer_code, email)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error on insert customer authentication.")
 	}
 
 	return nil
@@ -96,7 +97,7 @@ func UpdateCustomer(customer_code string, contact string) error{
 	result, err := database.Exec(UPDATEPREREGISTGRY, contact, customer_code )
 	if err != nil {
 		log.Println("Error on update customer pre-registry: %v", err)
-		return err
+		return errors.Wrap(err, "error on update customer.")
 	}
 	rows, _ := result.RowsAffected()
 	if rows == 0{

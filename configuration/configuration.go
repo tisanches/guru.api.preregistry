@@ -33,6 +33,7 @@ type Other struct{
 	Authorization string `json:"authorization,omitempty"`
 	Authentication string `json:"authentication,omitempty"`
 	PositionPrefix string `json:"position-prefix,omitempty"`
+	LogLevel string `json:"loglevel,omitempty"`
 }
 
 type Configuration struct{

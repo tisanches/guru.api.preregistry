@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/pkg/errors"
+
 type Position struct{
 	Customer_Code 	string `json:"customer_code,omitempty"`
 	DocumentNumber 	string `json:"document_number,omitempty"`
@@ -11,10 +13,20 @@ type Position struct{
 	Behind 			int64 `json:"behind,omitempty"`
 }
 
-func (p *Position)Get(customer_code string){
-	*p = mapPosition(customer_code)
+func (p *Position)Get(customer_code string) error {
+	err := errors.New("")
+	*p, err = mapPosition(customer_code, BYCUSTOMERCODE)
+	if err != nil{
+		return errors.Wrap(err, "error on getting position")
+	}
+	return nil
 }
 
-func (p *Position)GetByEmail(email string){
-	*p = mapPositionByEmail(email)
+func (p *Position)GetByEmail(email string) error{
+	err := errors.New("")
+	*p, err = mapPosition(email, BYEMAIL)
+	if err != nil{
+		return errors.Wrap(err, "error on getting position")
+	}
+	return nil
 }

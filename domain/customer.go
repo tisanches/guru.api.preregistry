@@ -2,6 +2,7 @@ package domain
 
 import (
 	"github.com/guru-invest/guru.framework/dynamic"
+	"github.com/pkg/errors"
 )
 
 type Customer struct{
@@ -14,23 +15,36 @@ type Customer struct{
 	Referral_Code string `json:"referral_code,omitempty"`
 }
 
-func (c *Customer)Insert(){
+func (c *Customer)Insert() error{
 	if c.Customer_Code == "" {
 		c.generateCustomerCode()
 	}
-	insert(c)
+	err := insert(c)
+	if err != nil{
+		return errors.Wrap(err, "Error on insert customer.")
+	}
+	return nil
 }
 
 func (c *Customer)generateCustomerCode(){
 	c.Customer_Code = dynamic.GenerateCustomerCode()
 }
 
-func (c *Customer) GetByEmail(email string){
-	*c = mapPreRegistryStep(email)
+func (c *Customer) GetByEmail(email string) error{
+	err := errors.New("")
+	*c, err = mapPreRegistryStep(email)
+	if err != nil{
+		return errors.Wrap(err, "error on getting customer")
+	}
+	return nil
 }
 
-func (c *Customer) Update(){
+func (c *Customer) Update() error{
 	if c.Customer_Code != "" {
-		update(c)
+		err := update(c)
+		if err != nil{
+			return errors.Wrap(err, "Error on update customer.")
+		}
 	}
+	return nil
 }

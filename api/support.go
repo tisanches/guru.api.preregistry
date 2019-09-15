@@ -6,6 +6,8 @@ import (
 	"github.com/guru-invest/guru.api.preregistry/adapter"
 	"github.com/guru-invest/guru.api.preregistry/configuration"
 	"github.com/guru-invest/guru.api.preregistry/domain"
+	"github.com/guru-invest/guru.api.preregistry/logger"
+	"github.com/guru-invest/guru.framework/api"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -22,6 +24,7 @@ const (
 	unknow
 )
 
+// Esperando o Antoine pedir pra liberar a api de validação de dados =)
 func validate(authentication string) authenticationType{
 	if validateEmail(authentication){
 		return email
@@ -126,7 +129,8 @@ func sendEmail(to string, name string, link string, mtype mailType){
 
 func sendCredentials(customer_code string, c *gin.Context){
 	position := domain.Position{}
-	position.Get(customer_code)
+	err := position.Get(customer_code)
+	checkErr(err, c)
 	if position.Customer_Code != ""{
 		msg := make(map[string]interface{})
 		m := getAuthentication(position.Email)
@@ -138,4 +142,12 @@ func sendCredentials(customer_code string, c *gin.Context){
 		msg["error"] = "User not foud"
 		c.AbortWithStatusJSON(404, msg)
 	}
+}
+
+func checkErr(err error, c *gin.Context){
+	if err != nil{
+		logger.LOG.Error("error on executing. stack: " + err.Error())
+		api.Error500(err, c)
+	}
+	logger.LOG.Debug("processing request...")
 }
