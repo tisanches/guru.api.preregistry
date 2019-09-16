@@ -87,6 +87,10 @@ func InsertCustomer(documentNumber string, name string, email string, contact st
 	if err != nil {
 		return errors.Wrap(err, "error on insert customer authentication.")
 	}
+	err = deletePreRegistryStep(email)
+	if err != nil {
+		return errors.Wrap(err, "error on delete customer preregistrystep.")
+	}
 
 	return nil
 }
@@ -138,6 +142,17 @@ func InsertOnPreRegistryStep(email string, name string, document_number string, 
 	_, err := database.Exec(sttmt)
 	if err != nil {
 		log.Println("Error on insert customer on queue: %v", err)
+		return err
+	}
+	return nil
+}
+
+func deletePreRegistryStep(email string) error{
+	connect()
+	defer database.Close()
+	_, err := database.Exec(DELETEPREREGISTRYSTEP, email)
+	if err != nil {
+		log.Println("Error on delete customer in preregistrystep: %v", err)
 		return err
 	}
 	return nil

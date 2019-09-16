@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/guru-invest/guru.api.preregistry/configuration"
 	"github.com/guru-invest/guru.api.preregistry/domain"
@@ -63,15 +64,24 @@ func createRoutes(){
 
 func  createCustomerHandler(c *gin.Context){
 	customer := domain.Customer{}
-	api.Extract(customer, c)
+	m := api.Extract(customer, c)
+	err := json.Unmarshal(m, &customer)
+	if err != nil{
+		api.Error400(err, c)
+	}
 	ePosition := domain.Position{}
-	err := ePosition.GetByEmail(customer.Email)
+	err = ePosition.GetByEmail(customer.Email)
 	checkErr(err, c)
 	if ePosition.Customer_Code != ""{
 		customer.Customer_Code = ePosition.Customer_Code
-		err := customer.Update()
-		checkErr(err, c)
-		sendCredentials(customer.Customer_Code, c)
+		if customer.Contact != "" {
+			err = customer.Update()
+			checkErr(err, c)
+			sendCredentials(customer.Customer_Code, c)
+		}else{
+			api.Error400(errors.New("user already exists."), c)
+		}
+
 	}else {
 		err := customer.Insert()
 		checkErr(err, c)
@@ -101,10 +111,15 @@ func getPositionHandler(c *gin.Context){
 			position := domain.Position{}
 			err := position.Get(customer_code)
 			checkErr(err, c)
-			c.AbortWithStatusJSON(200, position)
+			if position.DocumentNumber != ""{
+				c.AbortWithStatusJSON(200, position)
+			}else{
+				api.Error404(errors.New("customer_code not found"), c)
+			}
+
 		}
 	}else{
-		api.Error400(nil, c)
+		api.Error400(errors.New("authentication error"), c)
 	}
 }
 
