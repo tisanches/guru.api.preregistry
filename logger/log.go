@@ -10,7 +10,7 @@ import (
 var LOG = Logger.Logger{}
 
 func InitLog(header string, service string, level string){
-	err := LOG.Init(header, service, parseLogLevel(level), parseLogLevel(level), parseLogLevel(level))
+	err := LOG.Init(header, service, parseLogLevel(level), parseLogLevel(level), 0)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "CRITICAL Could not initialize logger. Quitting. Details: %s\n", err)
 		os.Exit(1)
