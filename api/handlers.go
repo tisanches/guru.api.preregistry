@@ -77,25 +77,36 @@ func  createCustomerHandler(c *gin.Context){
 		if customer.Contact != "" {
 			err = customer.Update()
 			checkErr(err, c)
-			sendCredentials(customer.Customer_Code, c)
+			msg := make(map[string]interface{})
+			msg["msg"] = "Contact updated."
 		}else{
 			api.Error400(errors.New("user already exists."), c)
 		}
 
 	}else {
-		err := customer.Insert()
-		checkErr(err, c)
-		position := domain.Position{}
-		err = position.Get(customer.Customer_Code)
-		checkErr(err, c)
-		if position.Customer_Code == "" {
-			msg := make(map[string]interface{})
-			msg["msg"] = "Step saved."
-			c.AbortWithStatusJSON(200, msg)
-		} else {
-			sendEmail(position.Email, position.Name, "", welcome)
-			sendCredentials(customer.Customer_Code, c)
+		sCustomer := customer
+		if sCustomer.DocumentNumber != "" {
+			sCustomer.GetByEmail(sCustomer.Email)
+			if ((sCustomer.DocumentNumber != customer.DocumentNumber) || (sCustomer.Email != customer.Email)) &&
+				((sCustomer.Email != "") || (sCustomer.DocumentNumber != "")) {
+				api.Error400(errors.New("user already exists."), c)
+			}else{
+				err := customer.Insert()
+				checkErr(err, c)
+				position := domain.Position{}
+				err = position.Get(customer.Customer_Code)
+				checkErr(err, c)
+				if position.Customer_Code == "" {
+					msg := make(map[string]interface{})
+					msg["msg"] = "Step saved."
+					c.AbortWithStatusJSON(200, msg)
+				} else {
+					sendEmail(position.Email, position.Name, "", welcome)
+					sendCredentials(customer.Customer_Code, c)
+				}
+			}
 		}
+
 	}
 }
 
