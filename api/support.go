@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/guru-invest/guru.api.preregistry/adapter"
 	"github.com/guru-invest/guru.api.preregistry/configuration"
@@ -144,10 +145,66 @@ func sendCredentials(customer_code string, c *gin.Context){
 	}
 }
 
-func checkErr(err error, c *gin.Context){
+func checkErr(err error, c *gin.Context)bool{
 	if err != nil{
 		logger.LOG.Error("error on executing. stack: " + err.Error())
-		api.Error500(err, c)
+		return true
 	}
-	logger.LOG.Debug("processing request...")
+	return false
+}
+
+func insertCustomer(customer domain.Customer, c *gin.Context){
+	err := customer.Insert()
+	if checkErr(err, c) {
+		api.Error400(errors.New("invalid customer."), c)
+	} else {
+		position := domain.Position{}
+		err = position.Get(customer.Customer_Code)
+		if checkErr(err, c) {
+			api.Error400(errors.New("invalid customer."), c)
+		} else {
+			if position.Customer_Code == "" {
+				msg := make(map[string]interface{})
+				msg["msg"] = "Step saved."
+				c.AbortWithStatusJSON(200, msg)
+			} else {
+				sendEmail(position.Email, position.Name, "", welcome)
+				sendCredentials(customer.Customer_Code, c)
+			}
+		}
+	}
+}
+
+func updateCustomer(customer domain.Customer, c *gin.Context){
+	err := customer.Update()
+	if checkErr(err, c) {
+		api.Error400(errors.New("invalid customer."), c)
+	} else {
+		msg := make(map[string]interface{})
+		msg["msg"] = "Contact updated."
+	}
+}
+
+func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.Context){
+	if ePosition.Customer_Code != "" {
+		customer.Customer_Code = ePosition.Customer_Code
+		if customer.Contact != "" {
+			updateCustomer(customer, c)
+		} else {
+			api.Error400(errors.New("invalid customer."), c)
+		}
+	} else {
+		sCustomer := customer
+		if sCustomer.DocumentNumber != "" {
+			sCustomer.GetByEmail(sCustomer.Email)
+			if ((sCustomer.DocumentNumber != customer.DocumentNumber) || (sCustomer.Email != customer.Email)) &&
+				(sCustomer.DocumentNumber != "") {
+				api.Error400(errors.New("user already exists."), c)
+			} else {
+				insertCustomer(customer, c)
+			}
+		} else {
+			insertCustomer(sCustomer, c)
+		}
+	}
 }

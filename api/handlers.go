@@ -15,7 +15,7 @@ func InitializeApi(){
 	logger.LOG.Info("Creating routes")
 	createRoutes()
 	logger.LOG.Info("Initializing application server")
-	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", true)
+	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", false)
 }
 
 func createRoutes(){
@@ -62,53 +62,23 @@ func createRoutes(){
 	//endregion
 }
 
-func  createCustomerHandler(c *gin.Context){
+func  createCustomerHandler(c *gin.Context) {
 	customer := domain.Customer{}
 	m := api.Extract(customer, c)
 	err := json.Unmarshal(m, &customer)
-	if err != nil{
+	if err != nil {
 		api.Error400(err, c)
 	}
 	ePosition := domain.Position{}
 	err = ePosition.GetByEmail(customer.Email)
-	checkErr(err, c)
-	if ePosition.Customer_Code != ""{
-		customer.Customer_Code = ePosition.Customer_Code
-		if customer.Contact != "" {
-			err = customer.Update()
-			checkErr(err, c)
-			msg := make(map[string]interface{})
-			msg["msg"] = "Contact updated."
-		}else{
-			api.Error400(errors.New("user already exists."), c)
-		}
-
-	}else {
-		sCustomer := customer
-		if sCustomer.DocumentNumber != "" {
-			sCustomer.GetByEmail(sCustomer.Email)
-			if ((sCustomer.DocumentNumber != customer.DocumentNumber) || (sCustomer.Email != customer.Email)) &&
-				((sCustomer.Email != "") || (sCustomer.DocumentNumber != "")) {
-				api.Error400(errors.New("user already exists."), c)
-			}else{
-				err := customer.Insert()
-				checkErr(err, c)
-				position := domain.Position{}
-				err = position.Get(customer.Customer_Code)
-				checkErr(err, c)
-				if position.Customer_Code == "" {
-					msg := make(map[string]interface{})
-					msg["msg"] = "Step saved."
-					c.AbortWithStatusJSON(200, msg)
-				} else {
-					sendEmail(position.Email, position.Name, "", welcome)
-					sendCredentials(customer.Customer_Code, c)
-				}
-			}
-		}
-
+	if checkErr(err, c) {
+		api.Error400(errors.New("invalid customer."), c)
+	} else {
+		treatCustomer(customer, ePosition, c)
 	}
 }
+
+
 
 func getPositionHandler(c *gin.Context){
 	token := c.GetHeader("Authorization")
