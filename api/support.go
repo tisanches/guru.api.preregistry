@@ -181,7 +181,8 @@ func updateCustomer(customer domain.Customer, c *gin.Context){
 		api.Error400(errors.New("invalid customer."), c)
 	} else {
 		msg := make(map[string]interface{})
-		msg["msg"] = "Contact updated."
+		msg["msg"] = "customer updated."
+		c.AbortWithStatusJSON(200,msg)
 	}
 }
 

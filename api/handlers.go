@@ -15,7 +15,7 @@ func InitializeApi(){
 	logger.LOG.Info("Creating routes")
 	createRoutes()
 	logger.LOG.Info("Initializing application server")
-	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", false)
+	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", true)
 }
 
 func createRoutes(){
