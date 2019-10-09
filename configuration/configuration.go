@@ -32,7 +32,7 @@ type Other struct{
 	DeepLinkPrefix string `json:"deeplink-prefix,omitempty"`
 	Authorization string `json:"authorization,omitempty"`
 	Authentication string `json:"authentication,omitempty"`
-	PositionPrefix string `json:"position-prefix,omitempty"`
+	AuthorizationPrefix string `json:"authorize-prefix,omitempty"`
 	LogLevel string `json:"loglevel,omitempty"`
 }
 

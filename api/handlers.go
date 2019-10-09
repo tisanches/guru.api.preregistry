@@ -48,11 +48,11 @@ func createRoutes(){
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route +
 		"/authentication/:customer_code", getAuthenticationHandler)
 	//endregion
-	//region /authorize/:token/:customer_code route
+	//region /authorize/a/:token/:customer_code route
 	logger.LOG.Debug("Adding route " + configuration.CONFIGURATION.API.Route +
-		"/authorize/:token/:customer_code")
-	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route +
-		"/authorize/:token/:customer_code", getAuthorizationByEmailHandler)
+		"/authorize/a/:token/:customer_code")
+	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route +
+		"/authorize/a/:token/:customer_code", getAuthorizationByEmailHandler)
 	//endregion
 	//region /referrals/:referral_code route
 	logger.LOG.Debug("Adding route " + configuration.CONFIGURATION.API.Route +
@@ -129,7 +129,11 @@ func getCustomerHandler(c *gin.Context){
 
 func setDeviceAuthorizationHandler(c *gin.Context){
 	customer := domain.Customer{}
-	api.Extract(customer, c)
+	m := api.Extract(customer, c)
+	err := json.Unmarshal(m, &customer)
+	if err != nil {
+		api.Error400(err, c)
+	}
 	if customer.Customer_Code == ""{
 		api.Error400(errors.New("missing key: customer_code"), c)
 	}else {
@@ -138,7 +142,7 @@ func setDeviceAuthorizationHandler(c *gin.Context){
 		checkErr(err, c)
 		if position.Customer_Code != "" {
 			m := getAuthentication(position.Email)
-			link := configuration.CONFIGURATION.OTHER.PositionPrefix + m["token"].(string) + "/" + m["customer_code"].(string)
+			link := configuration.CONFIGURATION.OTHER.AuthorizationPrefix + m["token"].(string) + "/" + m["customer_code"].(string)
 			sendEmail(position.Email, position.Name, link, authorization)
 			msg := make(map[string]interface{})
 			msg["msg"] = "Email sent to the user."

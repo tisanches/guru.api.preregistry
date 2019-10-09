@@ -113,9 +113,24 @@ const (
 func sendEmail(to string, name string, link string, mtype mailType){
 	subject := ""
 	mail := adapter.EmailWorkflow{}
+	reqBody := []byte{}
 	switch mtype {
 	case authorization:
-		mail.Template = "templates/authorizeTemplate.html"
+		client := &http.Client{}
+		req,_ := http.NewRequest("GET", "https://guruimages.s3.us-east-2.amazonaws.com/authorizeTemplate.html", nil)
+		res, err := client.Do(req)
+		if err != nil{
+			log.Println(err)
+		}else{
+			if res.Status == "200 OK"{
+				reqBody, err = ioutil.ReadAll(res.Body)
+				if err != nil{
+					log.Println(err)
+				}
+
+			}
+		}
+
 		subject = "Autorização de login"
 	default:
 		mail.Template = "templates/welcomeTemplate.html"
@@ -124,7 +139,7 @@ func sendEmail(to string, name string, link string, mtype mailType){
 	mail.To = to
 	mail.Name = name
 	mail.From = configuration.CONFIGURATION.MAIL.SMTPUser
-	mail.BuildWelComeEmail()
+	mail.BuildWelComeEmail(link, reqBody)
 	mail.SendEmail(subject)
 }
 

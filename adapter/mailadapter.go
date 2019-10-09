@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"io/ioutil"
 	"strings"
 )
 
@@ -13,11 +12,12 @@ type EmailWorkflow struct{
 	Name string
 }
 
-func (e *EmailWorkflow) BuildWelComeEmail() {
-	workflowByte, _ := ioutil.ReadFile(e.Template)
+func (e *EmailWorkflow) BuildWelComeEmail(link string, template []byte) {
+	workflowByte := template
 	name := strings.Split(e.Name, " ")
 	strHtml := string(workflowByte)
 	strHtml = strings.Replace(strHtml, "{User}", name[0], 1)
+	strHtml = strings.Replace(strHtml, "{Link}", link, 1)
 	e.EmailBody = strHtml
 }
 
