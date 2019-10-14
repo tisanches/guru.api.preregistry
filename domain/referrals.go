@@ -26,3 +26,4 @@ func (r *Referrals)Get(referral_code string) error {
 	}
 	return nil
 }
+

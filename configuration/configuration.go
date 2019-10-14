@@ -34,6 +34,7 @@ type Other struct{
 	Authentication string `json:"authentication,omitempty"`
 	AuthorizationPrefix string `json:"authorize-prefix,omitempty"`
 	LogLevel string `json:"loglevel,omitempty"`
+	Notification string `json:"notification,omitempty"`
 }
 
 type Configuration struct{

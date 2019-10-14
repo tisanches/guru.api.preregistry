@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -183,11 +184,30 @@ func insertCustomer(customer domain.Customer, c *gin.Context){
 				msg["msg"] = "Step saved."
 				c.AbortWithStatusJSON(200, msg)
 			} else {
+				if customer.Referral_Code != ""{
+					originCustomer := getCustomerByReferralCode(customer.Referral_Code)
+					sendNotification(originCustomer, customer.Email)
+				}
 				sendEmail(position.Email, position.Name, "", welcome)
 				sendCredentials(customer.Customer_Code, c)
 			}
 		}
 	}
+}
+
+func getCustomerByReferralCode(referral string) string{
+	ref := domain.Referrals{}
+	ref.Get(referral)
+	return ref.Origin_Code
+}
+
+func sendNotification(customer_code string, email string){
+	m := make(map[string]interface{})
+	m["customer_codes"] = []string{customer_code}
+	m["title"] = "Você subiu na lista!"
+	m["text"] = "Seu amigo " + email + " agora também está na fila!"
+	bytesRepresentation, _ := json.Marshal(m)
+	http.Post(configuration.CONFIGURATION.OTHER.Notification, "application/json", bytes.NewBuffer(bytesRepresentation))
 }
 
 func updateCustomer(customer domain.Customer, c *gin.Context){
