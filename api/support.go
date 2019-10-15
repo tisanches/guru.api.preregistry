@@ -186,7 +186,7 @@ func insertCustomer(customer domain.Customer, c *gin.Context){
 			} else {
 				if customer.Referral_Code != ""{
 					originCustomer := getCustomerByReferralCode(customer.Referral_Code)
-					sendNotification(originCustomer, customer.Email)
+					sendNotification(originCustomer, customer.Email, position.Referral_Code)
 				}
 				sendEmail(position.Email, position.Name, "", welcome)
 				sendCredentials(customer.Customer_Code, c)
@@ -201,13 +201,18 @@ func getCustomerByReferralCode(referral string) string{
 	return ref.Origin_Code
 }
 
-func sendNotification(customer_code string, email string){
+func sendNotification(customer_code string, email string, referral_code string){
 	m := make(map[string]interface{})
 	m["customer_codes"] = []string{customer_code}
-	m["title"] = "Você subiu na lista!"
-	m["text"] = "Seu amigo " + email + " agora também está na fila!"
+	m["title"] = configuration.CONFIGURATION.MESSAGES.NewReferralTitle
+	m["message"] = strings.Replace(configuration.CONFIGURATION.MESSAGES.NewReferalMessage, "{email}", email, 0)
+	m["deeplink"] = configuration.CONFIGURATION.MESSAGES.NewReferralDeeplink + referral_code
 	bytesRepresentation, _ := json.Marshal(m)
-	http.Post(configuration.CONFIGURATION.OTHER.Notification, "application/json", bytes.NewBuffer(bytesRepresentation))
+	resp, err := http.Post(configuration.CONFIGURATION.OTHER.Notification, "application/json", bytes.NewBuffer(bytesRepresentation))
+	if err != nil{
+		println(err)
+	}
+	println(resp.Status)
 }
 
 func updateCustomer(customer domain.Customer, c *gin.Context){

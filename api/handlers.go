@@ -15,7 +15,7 @@ func InitializeApi(){
 	logger.LOG.Info("Creating routes")
 	createRoutes()
 	logger.LOG.Info("Initializing application server")
-	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", false)
+	api.InitRoutering(configuration.CONFIGURATION.API.Port, "v1", true)
 }
 
 func createRoutes(){
@@ -179,9 +179,12 @@ func getReferralsHandler(c *gin.Context){
 		err := referrals.Get(referral_code)
 		checkErr(err, c)
 		if referrals.Referral_Code == ""{
-			api.Error400(errors.New("referral_code not found"), c)
+			m := make(map[string]interface{})
+			m["msg"] = "No referrals found"
+			c.AbortWithStatusJSON(200, m)
+		}else {
+			c.AbortWithStatusJSON(200, referrals)
 		}
-		c.AbortWithStatusJSON(200, referrals)
 	}
 }
 

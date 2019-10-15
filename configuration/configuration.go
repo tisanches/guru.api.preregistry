@@ -21,6 +21,12 @@ type Database struct{
 	Database string `json:"database,omitempty"`
 }
 
+type Messages struct{
+	NewReferralTitle string `json:"new-referral-title,omitempty"`
+	NewReferalMessage string `json:"new-referral-message,omitempty"`
+	NewReferralDeeplink string `json:"new-referral-deeplink,omitempty"`
+}
+
 type Mail struct{
 	SMTPUser string `json:"smtpuser,omitempty"`
 	SMTPPassword string `json:"smtppassword,omitempty"`
@@ -42,6 +48,7 @@ type Configuration struct{
 	DATABASE Database `json:"database,omitempty"`
 	OTHER Other `json:"other,omitempty"`
 	MAIL Mail `json:"mail,omitempty"`
+	MESSAGES Messages `json:"messages,omitempty"`
 }
 
 const CONFIGURATION_SERVER_KEY  = "aHR0cHM6Ly9jb25maWd1cmF0aW9uLmd1cnUuY29tLnZjL2FwaS92MS9wcm9kL3ByZXJlZ2lzdHJ5"
