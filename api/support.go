@@ -27,59 +27,59 @@ const (
 )
 
 // Esperando o Antoine pedir pra liberar a api de validação de dados =)
-func validate(authentication string) authenticationType{
-	if validateEmail(authentication){
+func validate(authentication string) authenticationType {
+	if validateEmail(authentication) {
 		return email
-	}else if validateDocument(authentication){
+	} else if validateDocument(authentication) {
 		return document_number
-	}else if validateContact(authentication){
+	} else if validateContact(authentication) {
 		return contact
-	}else{
+	} else {
 		return unknow
 	}
 }
 
-func validateEmail(email string) bool{
+func validateEmail(email string) bool {
 	rEmail := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 	res := rEmail.MatchString(email)
 	return res
 }
 
-func validateDocument(document_number string)bool{
+func validateDocument(document_number string) bool {
 	rDocument := regexp.MustCompile("^[0-9]*$")
 	res := rDocument.MatchString(document_number)
 	if res && strings.Count(document_number, "") >= 12 {
 		return res
-	}else{
+	} else {
 		return false
 	}
 }
 
-func validateContact(contact string)bool{
+func validateContact(contact string) bool {
 	rContact := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
 	res := rContact.MatchString(contact)
 	if res && strings.Count(contact, "") <= 12 {
 		return res
-	}else{
+	} else {
 		return false
 	}
 }
 
-func getAuthentication(email string) map[string]interface{}{
+func getAuthentication(email string) map[string]interface{} {
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", configuration.CONFIGURATION.OTHER.Authentication + email, nil)
+	req, _ := http.NewRequest("GET", configuration.CONFIGURATION.OTHER.Authentication+email, nil)
 	res, err := client.Do(req)
 	if err != nil {
 		log.Println(err)
-	}else{
-		if res.Status == "200 OK"{
+	} else {
+		if res.Status == "200 OK" {
 			reqBody, err := ioutil.ReadAll(res.Body)
-			if err != nil{
+			if err != nil {
 				return make(map[string]interface{})
 			}
 			resp := make(map[string]interface{})
 			err = json.Unmarshal(reqBody, &resp)
-			if err != nil{
+			if err != nil {
 				return make(map[string]interface{})
 			}
 			return resp
@@ -88,21 +88,20 @@ func getAuthentication(email string) map[string]interface{}{
 	return make(map[string]interface{})
 }
 
-func getAuthorization(token string) bool{
+func getAuthorization(token string) bool {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", configuration.CONFIGURATION.OTHER.Authorization, nil)
-	req.Header.Set("Authorization", "bearer " + token)
+	req.Header.Set("Authorization", "bearer "+token)
 	res, err := client.Do(req)
 	if err != nil {
 		log.Println(err)
-	}else{
-		if res.Status == "200 OK"{
+	} else {
+		if res.Status == "200 OK" {
 			return true
 		}
 	}
 	return false
 }
-
 
 type mailType int
 
@@ -111,21 +110,21 @@ const (
 	welcome
 )
 
-func sendEmail(to string, name string, link string, mtype mailType){
+func sendEmail(to string, name string, link string, mtype mailType) {
 	subject := ""
 	mail := adapter.EmailWorkflow{}
 	reqBody := []byte{}
 	switch mtype {
 	case authorization:
 		client := &http.Client{}
-		req,_ := http.NewRequest("GET", "https://guruimages.s3.us-east-2.amazonaws.com/authorizeTemplate.html", nil)
+		req, _ := http.NewRequest("GET", "https://guruimages.s3.us-east-2.amazonaws.com/authorizeTemplate.html", nil)
 		res, err := client.Do(req)
-		if err != nil{
+		if err != nil {
 			log.Println(err)
-		}else{
-			if res.Status == "200 OK"{
+		} else {
+			if res.Status == "200 OK" {
 				reqBody, err = ioutil.ReadAll(res.Body)
-				if err != nil{
+				if err != nil {
 					log.Println(err)
 				}
 
@@ -134,7 +133,20 @@ func sendEmail(to string, name string, link string, mtype mailType){
 
 		subject = "Autorização de login"
 	default:
-		mail.Template = "templates/welcomeTemplate.html"
+		client := &http.Client{}
+		req, _ := http.NewRequest("GET", "https://guruimages.s3.us-east-2.amazonaws.com/welcomeTemplate.html", nil)
+		res, err := client.Do(req)
+		if err != nil {
+			log.Println(err)
+		} else {
+			if res.Status == "200 OK" {
+				reqBody, err = ioutil.ReadAll(res.Body)
+				if err != nil {
+					log.Println(err)
+				}
+
+			}
+		}
 		subject = "Bem-vindo ao Guru"
 	}
 	mail.To = to
@@ -144,32 +156,32 @@ func sendEmail(to string, name string, link string, mtype mailType){
 	mail.SendEmail(subject)
 }
 
-func sendCredentials(customer_code string, c *gin.Context){
+func sendCredentials(customer_code string, c *gin.Context) {
 	position := domain.Position{}
 	err := position.Get(customer_code)
 	checkErr(err, c)
-	if position.Customer_Code != ""{
+	if position.Customer_Code != "" {
 		msg := make(map[string]interface{})
 		m := getAuthentication(position.Email)
 		msg["customer_code"] = position.Customer_Code
 		msg["token"] = m["token"].(string)
 		c.AbortWithStatusJSON(200, msg)
-	}else{
+	} else {
 		msg := make(map[string]interface{})
 		msg["error"] = "User not foud"
 		c.AbortWithStatusJSON(404, msg)
 	}
 }
 
-func checkErr(err error, c *gin.Context)bool{
-	if err != nil{
+func checkErr(err error, c *gin.Context) bool {
+	if err != nil {
 		logger.LOG.Error("error on executing. stack: " + err.Error())
 		return true
 	}
 	return false
 }
 
-func insertCustomer(customer domain.Customer, c *gin.Context){
+func insertCustomer(customer domain.Customer, c *gin.Context) {
 	err := customer.Insert()
 	if checkErr(err, c) {
 		api.Error400(errors.New("invalid customer."), c)
@@ -180,13 +192,18 @@ func insertCustomer(customer domain.Customer, c *gin.Context){
 			api.Error400(errors.New("invalid customer."), c)
 		} else {
 			if position.Customer_Code == "" {
+				if customer.Email != "" || customer.Referral_Code != "" &&
+					customer.Name == "" && customer.DocumentNumber == "" &&
+					customer.Contact == "" && customer.Customer_Code == "" {
+					sendEmail(customer.Email, customer.Name, "", welcome)
+				}
 				msg := make(map[string]interface{})
 				msg["msg"] = "Step saved."
 				c.AbortWithStatusJSON(200, msg)
 			} else {
-				if customer.Referral_Code != ""{
+				if customer.Referral_Code != "" {
 					originCustomer := getCustomerByReferralCode(customer.Referral_Code)
-					sendNotification(originCustomer, customer.Email, position.Referral_Code)
+					sendNotification(originCustomer, customer.Email, customer.Referral_Code)
 				}
 				sendEmail(position.Email, position.Name, "", welcome)
 				sendCredentials(customer.Customer_Code, c)
@@ -195,38 +212,56 @@ func insertCustomer(customer domain.Customer, c *gin.Context){
 	}
 }
 
-func getCustomerByReferralCode(referral string) string{
+func insertCustomerLanding(customer domain.Customer, c *gin.Context) {
+	err := customer.Insert()
+	if checkErr(err, c) {
+		api.Error400(errors.New("invalid customer."), c)
+	} else {
+		if customer.Email != "" || customer.Referral_Code != "" &&
+			customer.Name == "" && customer.DocumentNumber == "" &&
+			customer.Contact == "" && customer.Customer_Code == "" {
+			sendEmail(customer.Email, customer.Name, "", welcome)
+		}
+		msg := make(map[string]interface{})
+		msg["msg"] = "Step saved."
+		c.AbortWithStatusJSON(200, msg)
+	}
+
+}
+
+func getCustomerByReferralCode(referral string) string {
 	ref := domain.Referrals{}
 	ref.Get(referral)
 	return ref.Origin_Code
 }
 
-func sendNotification(customer_code string, email string, referral_code string){
+func sendNotification(customer_code string, email string, referral_code string) {
 	m := make(map[string]interface{})
 	m["customer_codes"] = []string{customer_code}
 	m["title"] = configuration.CONFIGURATION.MESSAGES.NewReferralTitle
-	m["message"] = strings.Replace(configuration.CONFIGURATION.MESSAGES.NewReferalMessage, "{email}", email, 0)
+	message := strings.Replace(configuration.CONFIGURATION.MESSAGES.NewReferalMessage, "{email}", email, 1)
+	m["message"] = message
 	m["deeplink"] = configuration.CONFIGURATION.MESSAGES.NewReferralDeeplink + referral_code
 	bytesRepresentation, _ := json.Marshal(m)
 	resp, err := http.Post(configuration.CONFIGURATION.OTHER.Notification, "application/json", bytes.NewBuffer(bytesRepresentation))
-	if err != nil{
+	if err != nil {
 		println(err)
 	}
 	println(resp.Status)
 }
 
-func updateCustomer(customer domain.Customer, c *gin.Context){
+func updateCustomer(customer domain.Customer, c *gin.Context) {
 	err := customer.Update()
 	if checkErr(err, c) {
 		api.Error400(errors.New("invalid customer."), c)
 	} else {
 		msg := make(map[string]interface{})
 		msg["msg"] = "customer updated."
-		c.AbortWithStatusJSON(200,msg)
+		c.AbortWithStatusJSON(200, msg)
 	}
 }
 
-func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.Context){
+func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.Context) {
 	if ePosition.Customer_Code != "" {
 		customer.Customer_Code = ePosition.Customer_Code
 		if customer.Contact != "" {
@@ -247,5 +282,15 @@ func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.C
 		} else {
 			insertCustomer(sCustomer, c)
 		}
+	}
+}
+
+func treatCustomerLanding(customer domain.Customer, ePosition domain.Position, c *gin.Context) {
+	sCustomer := customer
+	if sCustomer.DocumentNumber != "" {
+		sCustomer.GetByEmail(sCustomer.Email)
+		api.Error400(errors.New("user already exists."), c)
+	} else {
+		insertCustomerLanding(sCustomer, c)
 	}
 }

@@ -1,6 +1,11 @@
 package adapter
 
 import (
+	"fmt"
+	"github.com/guru-invest/guru.api.preregistry/configuration"
+	"github.com/mailjet/mailjet-apiv3-go"
+	"log"
+	"math/rand"
 	"strings"
 )
 
@@ -24,7 +29,7 @@ func (e *EmailWorkflow) BuildWelComeEmail(link string, template []byte) {
 
 func (e *EmailWorkflow) SendEmail(subject string) {
 	mailData := parseMailData(e, subject)
-	sendEmail(mailData)
+	sendEmail(mailData, e.To, e.Name)
 }
 
 func parseMailData(e *EmailWorkflow, subject string) MailData {
@@ -42,7 +47,43 @@ func parseMailData(e *EmailWorkflow, subject string) MailData {
 	return mailData
 }
 
-func sendEmail(mailData MailData) {
-	mailSender := NewMailSender()
-	mailSender.Send(mailData)
+func sendEmail(mailData MailData, To string, customerName string) {
+	//mailSender := NewMailSender()
+	//mailSender.Send(mailData)
+
+	mailjetClient := mailjet.NewMailjetClient(configuration.CONFIGURATION.MAIL.MailjetApiKeyPublic, configuration.CONFIGURATION.MAIL.MailjetApiKeyPrivate)
+	messagesInfo := []mailjet.InfoMessagesV31 {
+		{
+			From: &mailjet.RecipientV31{
+				Email: configuration.CONFIGURATION.MAIL.MailjetUsername,
+				Name:  configuration.CONFIGURATION.MAIL.MailjetName,
+			},
+			To: &mailjet.RecipientsV31{
+				mailjet.RecipientV31{
+					Email: To,
+					Name:  customerName,
+				},
+			},
+			Subject:  mailData.Subject,
+			HTMLPart: mailData.Body,
+			CustomID: generateGUID(),
+		},
+	}
+	messages := mailjet.MessagesV31{Info: messagesInfo }
+	res, err := mailjetClient.SendMailV31(&messages)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Data: %+v\n", res)
+}
+
+func generateGUID() string{
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	uuid := fmt.Sprintf("%x-%x-%x-%x-%x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return uuid
 }

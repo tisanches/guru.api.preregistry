@@ -32,6 +32,10 @@ type Mail struct{
 	SMTPPassword string `json:"smtppassword,omitempty"`
 	SMTPServer string `json:"smtpserver,omitempty"`
 	SMTPPort string `json:"smtpport,omitempty"`
+	MailjetApiKeyPublic string `json:"mailjet-api-key-public,omitempty"`
+	MailjetApiKeyPrivate string `json:"mailjet-api-key-private,omitempty"`
+	MailjetUsername string `json:"mailjet-username,omitempty"`
+	MailjetName string `json:"mailjet-name,omitempty"`
 }
 
 type Other struct{

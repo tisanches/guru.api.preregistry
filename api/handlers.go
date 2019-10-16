@@ -23,6 +23,9 @@ func createRoutes(){
 	logger.LOG.Debug("Adding route " + configuration.CONFIGURATION.API.Route +
 		"/add")
 	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route +
+		"/landing/create", createCustomerFromLandingHandler)
+
+	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route +
 		"/add", createCustomerHandler)
 	//endregion
 	//region /customer/:param route
@@ -75,6 +78,22 @@ func  createCustomerHandler(c *gin.Context) {
 		api.Error400(errors.New("invalid customer."), c)
 	} else {
 		treatCustomer(customer, ePosition, c)
+	}
+}
+
+func  createCustomerFromLandingHandler(c *gin.Context) {
+	customer := domain.Customer{}
+	m := api.Extract(customer, c)
+	err := json.Unmarshal(m, &customer)
+	if err != nil {
+		api.Error400(err, c)
+	}
+	ePosition := domain.Position{}
+	err = ePosition.GetByEmail(customer.Email)
+	if checkErr(err, c) {
+		api.Error400(errors.New("invalid customer."), c)
+	} else {
+		treatCustomerLanding(customer, ePosition, c)
 	}
 }
 
