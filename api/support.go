@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -182,6 +183,9 @@ func checkErr(err error, c *gin.Context) bool {
 }
 
 func insertCustomer(customer domain.Customer, c *gin.Context) {
+	referral_position := domain.Position{}
+	referral_position.Get(getCustomerByReferralCode(customer.Referral_Code))
+	oldposition := referral_position.Position
 	err := customer.Insert()
 	if checkErr(err, c) {
 		api.Error400(errors.New("invalid customer."), c)
@@ -196,14 +200,21 @@ func insertCustomer(customer domain.Customer, c *gin.Context) {
 				msg["msg"] = "Step saved."
 				c.AbortWithStatusJSON(200, msg)
 			} else {
-				if customer.Referral_Code != "" {
-					originCustomer := getCustomerByReferralCode(customer.Referral_Code)
-					sendNotification(originCustomer, customer.Email, customer.Referral_Code)
-				}
+				buildNotification(customer, referral_position, oldposition)
 				sendEmail(position.Email, position.Name, "", welcome)
 				sendCredentials(customer.Customer_Code, c)
 			}
 		}
+	}
+}
+
+func buildNotification(customer domain.Customer, referral_position domain.Position, oldposition int64) {
+	if customer.Referral_Code != "" {
+		referral_position.Get(getCustomerByReferralCode(customer.Referral_Code))
+		newPosition := referral_position.Position
+		originCustomer := getCustomerByReferralCode(customer.Referral_Code)
+		res := oldposition - newPosition
+		sendNotification(originCustomer, customer.Email, customer.Referral_Code, strconv.Itoa(int(res)), customer.Name)
 	}
 }
 
@@ -230,13 +241,13 @@ func getCustomerByReferralCode(referral string) string {
 	return ref.Origin_Code
 }
 
-func sendNotification(customer_code string, email string, referral_code string) {
+func sendNotification(customer_code string, email string, referral_code string, position string, friendname string) {
 	m := make(map[string]interface{})
 	m["customer_codes"] = []string{customer_code}
 	m["title"] = configuration.CONFIGURATION.MESSAGES.NewReferralTitle
 	message := strings.Replace(configuration.CONFIGURATION.MESSAGES.NewReferalMessage, "{email}", email, 1)
 	m["message"] = message
-	m["deeplink"] = configuration.CONFIGURATION.MESSAGES.NewReferralDeeplink + referral_code
+	m["deeplink"] = configuration.CONFIGURATION.MESSAGES.NewReferralDeeplink + referral_code + "?position=" + position + "&friendname=" + friendname
 	bytesRepresentation, _ := json.Marshal(m)
 	resp, err := http.Post(configuration.CONFIGURATION.OTHER.Notification, "application/json", bytes.NewBuffer(bytesRepresentation))
 	if err != nil {
