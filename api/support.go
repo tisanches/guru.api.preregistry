@@ -192,11 +192,6 @@ func insertCustomer(customer domain.Customer, c *gin.Context) {
 			api.Error400(errors.New("invalid customer."), c)
 		} else {
 			if position.Customer_Code == "" {
-				if customer.Email != "" || customer.Referral_Code != "" &&
-					customer.Name == "" && customer.DocumentNumber == "" &&
-					customer.Contact == "" && customer.Customer_Code == "" {
-					sendEmail(customer.Email, customer.Name, "", welcome)
-				}
 				msg := make(map[string]interface{})
 				msg["msg"] = "Step saved."
 				c.AbortWithStatusJSON(200, msg)
@@ -285,12 +280,16 @@ func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.C
 	}
 }
 
-func treatCustomerLanding(customer domain.Customer, ePosition domain.Position, c *gin.Context) {
-	sCustomer := customer
-	if sCustomer.DocumentNumber != "" {
-		sCustomer.GetByEmail(sCustomer.Email)
-		api.Error400(errors.New("user already exists."), c)
-	} else {
-		insertCustomerLanding(sCustomer, c)
+func treatCustomerLanding(customer domain.Customer, c *gin.Context) {
+	sCustomer := domain.Customer{}
+	err := sCustomer.GetByEmail(customer.Email)
+	if err == nil {
+		if sCustomer.Email == customer.Email {
+			api.Error400(errors.New("user already exists."), c)
+		}else{
+			insertCustomerLanding(customer, c)
+		}
+	}else{
+		insertCustomerLanding(customer, c)
 	}
 }
