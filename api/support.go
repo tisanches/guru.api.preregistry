@@ -165,6 +165,7 @@ func sendCredentials(customer_code string, c *gin.Context) {
 		msg := make(map[string]interface{})
 		m := getAuthentication(position.Email)
 		msg["customer_code"] = position.Customer_Code
+		msg["email"] = position.Email
 		msg["token"] = m["token"].(string)
 		c.AbortWithStatusJSON(200, msg)
 	} else {
