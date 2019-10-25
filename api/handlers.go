@@ -63,6 +63,10 @@ func createRoutes() {
 	api.AddRoute(api.GET, configuration.CONFIGURATION.API.Route+
 		"/referrals/:referral_code", getReferralsHandler)
 	//endregion
+
+	api.AddRoute(api.POST, configuration.CONFIGURATION.API.Route+
+		"/customer/check", checkCustomerHandler)
+
 }
 
 func createCustomerHandler(c *gin.Context) {
@@ -116,24 +120,35 @@ func getPositionHandler(c *gin.Context) {
 }
 
 func getCustomerHandler(c *gin.Context) {
-	param := c.Param("param")
-	if param == "" {
+	email := c.Param("param")
+	if email == "" {
 		api.Error400(errors.New("missing key: email"), c)
 	} else {
-		customer := domain.Customer{}
-		position := domain.Position{}
-		err := customer.GetByEmail(param)
-		checkErr(err, c)
-		err = position.GetByEmail(param)
-		checkErr(err, c)
-		if position.Customer_Code != "" {
-			msg := make(map[string]interface{})
-			msg["customer_code"] = position.Customer_Code
-			c.AbortWithStatusJSON(200, msg)
-		} else if customer.Email != "" {
-			c.AbortWithStatusJSON(200, customer)
+		checkCustomer(email, c)
+	}
+}
+
+func checkCustomer(email string, c *gin.Context) {
+	customer := domain.Customer{}
+	position := domain.Position{}
+	err := customer.GetByEmail(email)
+	checkErr(err, c)
+	err = position.GetByEmail(email)
+	checkErr(err, c)
+	if position.Customer_Code != "" {
+		msg := make(map[string]interface{})
+		msg["customer_code"] = position.Customer_Code
+		c.AbortWithStatusJSON(200, msg)
+	} else if customer.Email != "" {
+		c.AbortWithStatusJSON(200, customer)
+	} else {
+		ePosition := domain.Position{}
+		err = ePosition.GetByEmail(customer.Email)
+		if checkErr(err, c) {
+			api.Error400(errors.New("invalid customer."), c)
 		} else {
-			api.Error404(errors.New("customer not found"), c)
+			customer.Email = email
+			treatCustomer(customer, ePosition, c)
 		}
 	}
 }
@@ -197,6 +212,17 @@ func getReferralsHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(200, referrals)
 		}
 	}
+}
+
+func checkCustomerHandler (c *gin.Context){
+	customer := domain.Customer{}
+	m := api.Extract(customer, c)
+	err := json.Unmarshal(m, &customer)
+	if err != nil {
+		api.Error400(err, c)
+	}
+	checkCustomer(customer.Email, c)
+
 }
 
 func getAuthenticationHandler(c *gin.Context) {
