@@ -40,10 +40,15 @@ func (c *Customer) GetByEmail(email string) error{
 }
 
 func (c *Customer) Update() error{
-	if c.Customer_Code != "" {
+	if c.Customer_Code != "" && c.Contact != ""{
 		err := update(c)
 		if err != nil{
 			return errors.Wrap(err, "Error on update customer.")
+		}
+	}else{
+		err := insert(c)
+		if err != nil{
+			return errors.Wrap(err, "Error on update customer on preregistrystep.")
 		}
 	}
 	return nil

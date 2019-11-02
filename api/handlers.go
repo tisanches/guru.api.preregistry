@@ -135,7 +135,7 @@ func checkCustomer(email string, c *gin.Context) {
 	checkErr(err, c)
 	err = position.GetByEmail(email)
 	checkErr(err, c)
-	if position.Customer_Code != "" {
+	if position.DocumentNumber != "" {
 		msg := make(map[string]interface{})
 		msg["customer_code"] = position.Customer_Code
 		c.AbortWithStatusJSON(200, msg)
@@ -144,7 +144,7 @@ func checkCustomer(email string, c *gin.Context) {
 	} else {
 		ePosition := domain.Position{}
 		err = ePosition.GetByEmail(customer.Email)
-		if checkErr(err, c) {
+		if checkErr(err, c) || !validateEmail(email){
 			api.Error400(errors.New("invalid customer."), c)
 		} else {
 			customer.Email = email

@@ -134,11 +134,11 @@ func insertOnQueue(customer_code string) error{
 	return nil
 }
 
-func InsertOnPreRegistryStep(email string, name string, document_number string, contact string, referral string) error{
+func InsertOnPreRegistryStep(email string, name string, document_number string, contact string, referral string, customerCode string) error{
 	connect()
 	defer database.Close()
 	sttmt := strings.Replace(INSERTPREREGISTRYSTEP, "@", DefineEmptyOrNot(name, document_number, contact, referral),1)
-	sttmt = fmt.Sprintf(sttmt, email, name, document_number, contact, referral)
+	sttmt = fmt.Sprintf(sttmt, email, name, document_number, contact, referral, customerCode)
 	_, err := database.Exec(sttmt)
 	if err != nil {
 		log.Println("Error on insert customer on queue: %v", err)

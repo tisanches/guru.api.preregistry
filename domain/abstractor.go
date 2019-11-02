@@ -32,10 +32,12 @@ func mapPosition(param string, byType POSITIONBYTYPE) (Position, error) {
 				DocumentNumber: mp["document_number"].(string),
 				Name:           mp["name"].(string),
 				Email:          mp["email"].(string),
-				Referral_Code:  configuration.CONFIGURATION.OTHER.DeepLinkPrefix + mp["referral_code"].(string),
 				Referral_Count: mp["referral_count"].(int64),
 				Position:       mp["position"].(int64),
 				Behind:         mp["behind"].(int64),
+			}
+			if mp["referral_code"].(string) != "" {
+				position.Referral_Code =  configuration.CONFIGURATION.OTHER.DeepLinkPrefix + mp["referral_code"].(string)
 			}
 		}
 	}
@@ -93,7 +95,7 @@ func insert(c *Customer) error{
 			return errors.Wrap(err, "error on inserting customer on pre registry.")
 		}
 	}else{
-		err := repository.InsertOnPreRegistryStep(c.Email, c.Name, c.DocumentNumber, c.Contact, c.Referral_Code)
+		err := repository.InsertOnPreRegistryStep(c.Email, c.Name, c.DocumentNumber, c.Contact, c.Referral_Code, c.Customer_Code)
 		if err != nil{
 			return errors.Wrap(err, "error on inserting customer on pre registry step.")
 		}
@@ -102,7 +104,7 @@ func insert(c *Customer) error{
 }
 
 func update(c *Customer) error{
-	if c.Customer_Code != "" && c.Contact != ""{
+	if c.Customer_Code != ""{
 		err := repository.UpdateCustomer(c.Customer_Code, c.Contact)
 		if err != nil{
 			return errors.Wrap(err, "error on update customer.")

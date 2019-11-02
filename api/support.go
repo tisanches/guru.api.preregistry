@@ -196,7 +196,7 @@ func insertCustomer(customer domain.Customer, c *gin.Context) {
 		if checkErr(err, c) {
 			api.Error400(errors.New("invalid customer."), c)
 		} else {
-			if position.Customer_Code == "" {
+			if position.DocumentNumber == "" {
 				msg := make(map[string]interface{})
 				msg["msg"] = "Step saved."
 				c.AbortWithStatusJSON(200, msg)
@@ -274,7 +274,8 @@ func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.C
 		if customer.Contact != "" {
 			updateCustomer(customer, c)
 		} else {
-			api.Error400(errors.New("invalid customer."), c)
+			//api.Error400(errors.New("invalid customer."), c)
+			insertCustomer(customer, c)
 		}
 	} else {
 		sCustomer := customer
@@ -302,6 +303,10 @@ func treatCustomerLanding(customer domain.Customer, c *gin.Context) {
 			insertCustomerLanding(customer, c)
 		}
 	}else{
-		insertCustomerLanding(customer, c)
+		if validateEmail(customer.Email) {
+			insertCustomerLanding(customer, c)
+		}else{
+			api.Error400(errors.New("invalid customer"), c)
+		}
 	}
 }
