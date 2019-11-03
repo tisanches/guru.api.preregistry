@@ -269,44 +269,49 @@ func updateCustomer(customer domain.Customer, c *gin.Context) {
 }
 
 func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.Context) {
-	if ePosition.Customer_Code != "" {
-		customer.Customer_Code = ePosition.Customer_Code
-		if customer.Contact != "" {
-			updateCustomer(customer, c)
-		} else {
-			//api.Error400(errors.New("invalid customer."), c)
-			insertCustomer(customer, c)
-		}
-	} else {
-		sCustomer := customer
-		if sCustomer.DocumentNumber != "" {
-			sCustomer.GetByEmail(sCustomer.Email)
-			if ((sCustomer.DocumentNumber != customer.DocumentNumber) || (sCustomer.Email != customer.Email)) &&
-				(sCustomer.DocumentNumber != "") {
-				api.Error400(errors.New("user already exists."), c)
+	if validateEmail(customer.Email) {
+		if ePosition.Customer_Code != "" {
+			customer.Customer_Code = ePosition.Customer_Code
+			if customer.Contact != "" {
+				updateCustomer(customer, c)
 			} else {
+				//api.Error400(errors.New("invalid customer."), c)
 				insertCustomer(customer, c)
 			}
 		} else {
-			insertCustomer(sCustomer, c)
+			sCustomer := customer
+			if sCustomer.DocumentNumber != "" {
+				sCustomer.GetByEmail(sCustomer.Email)
+				if ((sCustomer.DocumentNumber != customer.DocumentNumber) || (sCustomer.Email != customer.Email)) &&
+					(sCustomer.DocumentNumber != "") {
+					api.Error400(errors.New("user already exists."), c)
+				} else {
+					insertCustomer(customer, c)
+				}
+			} else {
+				insertCustomer(sCustomer, c)
+			}
 		}
+	}else{
+		api.Error400(errors.New("invalid customer."), c)
 	}
 }
 
 func treatCustomerLanding(customer domain.Customer, c *gin.Context) {
 	sCustomer := domain.Customer{}
-	err := sCustomer.GetByEmail(customer.Email)
-	if err == nil {
-		if sCustomer.Email == customer.Email {
-			api.Error400(errors.New("user already exists."), c)
-		}else{
+	if validateEmail(customer.Email) {
+		err := sCustomer.GetByEmail(customer.Email)
+		if err == nil {
+			if sCustomer.Email == customer.Email {
+				api.Error400(errors.New("user already exists."), c)
+			} else {
+				insertCustomerLanding(customer, c)
+			}
+		} else {
+
 			insertCustomerLanding(customer, c)
 		}
-	}else{
-		if validateEmail(customer.Email) {
-			insertCustomerLanding(customer, c)
-		}else{
-			api.Error400(errors.New("invalid customer"), c)
-		}
+	} else {
+		api.Error400(errors.New("invalid customer"), c)
 	}
 }
