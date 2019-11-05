@@ -298,11 +298,11 @@ func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.C
 }
 
 func treatCustomerLanding(customer domain.Customer, c *gin.Context) {
-	sCustomer := domain.Customer{}
+	sPosition := domain.Position{}
 	if validateEmail(customer.Email) {
-		err := sCustomer.GetByEmail(customer.Email)
+		err := sPosition.GetByEmail(customer.Email)
 		if err == nil {
-			if sCustomer.Email == customer.Email {
+			if sPosition.Email == customer.Email {
 				api.Error400(errors.New("user already exists."), c)
 			} else {
 				insertCustomerLanding(customer, c)
