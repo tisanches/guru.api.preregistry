@@ -272,8 +272,8 @@ func treatCustomer(customer domain.Customer, ePosition domain.Position, c *gin.C
 	if validateEmail(customer.Email) {
 		if ePosition.Customer_Code != "" {
 			customer.Customer_Code = ePosition.Customer_Code
-			if customer.Contact != "" {
-				updateCustomer(customer, c)
+			if ePosition.DocumentNumber != "" {
+				c.AbortWithStatusJSON(403, "user already exists.")
 			} else {
 				//api.Error400(errors.New("invalid customer."), c)
 				insertCustomer(customer, c)
@@ -303,7 +303,7 @@ func treatCustomerLanding(customer domain.Customer, c *gin.Context) {
 		err := sPosition.GetByEmail(customer.Email)
 		if err == nil {
 			if sPosition.Email == customer.Email {
-				api.Error400(errors.New("user already exists."), c)
+				c.AbortWithStatusJSON(202, "user already exists.")
 			} else {
 				insertCustomerLanding(customer, c)
 			}
