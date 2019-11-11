@@ -111,7 +111,7 @@ const (
 	welcome
 )
 
-func sendEmail(to string, name string, link string, mtype mailType) {
+func sendEmail(to string, name string, link string, mtype mailType, fields map[string]interface{}) {
 	subject := ""
 	mail := adapter.EmailWorkflow{}
 	reqBody := []byte{}
@@ -153,7 +153,7 @@ func sendEmail(to string, name string, link string, mtype mailType) {
 	mail.To = to
 	mail.Name = name
 	mail.From = configuration.CONFIGURATION.MAIL.SMTPUser
-	mail.BuildWelComeEmail(link, reqBody)
+	mail.BuildWelComeEmail(link, reqBody, fields)
 	mail.SendEmail(subject)
 }
 
@@ -202,7 +202,12 @@ func insertCustomer(customer domain.Customer, c *gin.Context) {
 				c.AbortWithStatusJSON(200, msg)
 			} else {
 				buildNotification(customer, referral_position, oldposition)
-				sendEmail(position.Email, position.Name, "", welcome)
+				m := make(map[string]interface{})
+				m["whatsapp_link"] = "https://wa.me/?text=" + "" + "%20" + position.Referral_Code
+				m["referral_link"] = position.Referral_Code
+				m["position"] = strconv.FormatInt(position.Position, 10)
+				m["behind"] = strconv.FormatInt(position.Behind, 10)
+				sendEmail(position.Email, position.Name, "", welcome, m)
 				sendCredentials(customer.Customer_Code, c)
 			}
 		}
@@ -227,7 +232,6 @@ func insertCustomerLanding(customer domain.Customer, c *gin.Context) {
 		if customer.Email != "" || customer.Referral_Code != "" &&
 			customer.Name == "" && customer.DocumentNumber == "" &&
 			customer.Contact == "" && customer.Customer_Code == "" {
-			sendEmail(customer.Email, customer.Name, "", welcome)
 		}
 		msg := make(map[string]interface{})
 		msg["msg"] = "Step saved."

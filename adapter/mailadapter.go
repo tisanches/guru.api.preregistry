@@ -17,12 +17,13 @@ type EmailWorkflow struct{
 	Name string
 }
 
-func (e *EmailWorkflow) BuildWelComeEmail(link string, template []byte) {
+func (e *EmailWorkflow) BuildWelComeEmail(link string, template []byte, fields map[string]interface{}) {
 	workflowByte := template
-	name := strings.Split(e.Name, " ")
 	strHtml := string(workflowByte)
-	strHtml = strings.Replace(strHtml, "{User}", name[0], 1)
-	strHtml = strings.Replace(strHtml, "{Link}", link, 1)
+	strHtml = strings.Replace(strHtml, "{WHATSAPP_LINK}", fields["whatsapp_link"].(string), 1)
+	strHtml = strings.Replace(strHtml, "{REFERRAL_LINK}", fields["referral_link"].(string), 1)
+	strHtml = strings.Replace(strHtml, "{POSITION}", fields["position"].(string), 1)
+	strHtml = strings.Replace(strHtml, "{BEHIND}", fields["behind"].(string), 1)
 	e.EmailBody = strHtml
 }
 

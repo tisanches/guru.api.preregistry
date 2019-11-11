@@ -173,7 +173,7 @@ func setDeviceAuthorizationHandler(c *gin.Context) {
 		if position.Customer_Code != "" {
 			m := getAuthentication(position.Email)
 			link := configuration.CONFIGURATION.OTHER.AuthorizationPrefix + m["token"].(string) + "/" + m["customer_code"].(string)
-			sendEmail(position.Email, position.Name, link, authorization)
+			sendEmail(position.Email, position.Name, link, authorization, make(map[string]interface{}))
 			msg := make(map[string]interface{})
 			msg["msg"] = "Email sent to the user."
 			c.AbortWithStatusJSON(200, msg)
